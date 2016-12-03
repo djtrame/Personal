@@ -12,6 +12,7 @@ white = (255,255,255)
 black = (0,0,0)
 red = (255,0,0)
 green = (0,255,0)
+darkgreen = (0,155,0)
 blue = (0,0,255)
 
 display_width = 800
@@ -26,12 +27,19 @@ pygame.display.set_caption('Psyqo Slither')
 clock = pygame.time.Clock()
 
 block_size = 10
-FPS = 30
+FPS = 20
 
 #font size 25
 #changing testing git
 #testing git again
 font = pygame.font.SysFont(None, 25)
+
+def snake(block_size, snakeList):
+    for XnY in snakeList:
+        # x,y,width,height
+        # draw the snake
+        #pygame.draw.rect(gameDisplay, darkgreen, [lead_x, lead_y, block_size, block_size])
+        pygame.draw.rect(gameDisplay, darkgreen, [XnY[0],XnY[1],block_size,block_size])
 
 def message_to_screen(msg,color):
     screen_text = font.render(msg, True, color)
@@ -49,6 +57,9 @@ def gameLoop():
     lead_y = display_height / 2
     lead_x_change = 0
     lead_y_change = 0
+
+    snakeList = []
+    snakeLength = 1
 
     #a random number from 0 to 790 could by 113.  that pixel wouldn't line up with our block_size snake head
     #so we round that 113 to something like 110.  or we round 116 to 120.  now it lines up with the snake
@@ -109,12 +120,34 @@ def gameLoop():
 
         gameDisplay.fill(white)
 
-        #draw the apple
-        pygame.draw.rect(gameDisplay, red, [randAppleX, randAppleY, block_size, block_size])
+        appleThickness = 30
 
-        #x,y,width,height
+        #draw the apple
+        #pygame.draw.rect(gameDisplay, red, [randAppleX, randAppleY, block_size, block_size])
+        pygame.draw.rect(gameDisplay, red, [randAppleX, randAppleY, appleThickness, appleThickness])
+
+
+        snakeHead = []
+        snakeHead.append(lead_x)
+        snakeHead.append(lead_y)
+        snakeList.append(snakeHead)
+
+        #if length of the snake is bigger than the allowed length then remove the 1st element
+        if len(snakeList) > snakeLength:
+            del snakeList[0]
+
+        #check if we're crashing into ourselves
+        #list comprehension
+        for eachSegment in snakeList[:-1]:
+            if eachSegment == snakeHead:
+                gameOver = True
+
+        #snakeList[1:] would get us anything after the 1st element
+        #snakeList[-1] is the last element
+
         #draw the snake
-        pygame.draw.rect(gameDisplay,black,[lead_x,lead_y,block_size,block_size])
+        snake(block_size, snakeList)
+
 
         #pygame.draw.rect(gameDisplay, red, [400, 300, 10, 20])
 
@@ -124,8 +157,18 @@ def gameLoop():
         pygame.display.update()
 
         #check crossover of snake and apple
-        if lead_x == randAppleX and lead_y == randAppleY:
-            print("yummy")
+        # if lead_x == randAppleX and lead_y == randAppleY:
+        #     randAppleX = roundTo10(random.randrange(0, display_width - block_size))
+        #     randAppleY = roundTo10(random.randrange(0, display_height - block_size))
+        #     snakeLength += 1
+
+        #handle a bigger apple crossover
+        if lead_x >= randAppleX and lead_x <= randAppleX + appleThickness:
+            if lead_y >= randAppleY and lead_y <= randAppleY + appleThickness:
+                randAppleX = roundTo10(random.randrange(0, display_width - block_size))
+                randAppleY = roundTo10(random.randrange(0, display_height - block_size))
+                snakeLength += 1
+
 
         #frames per second (fps)
         #to affect game difficulty always change movement variables first before tinkering with fps
