@@ -28,6 +28,7 @@ block_size = 10
 FPS = 30
 
 #font size 25
+#changing testing git
 font = pygame.font.SysFont(None, 25)
 
 def message_to_screen(msg,color):
