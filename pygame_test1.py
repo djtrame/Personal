@@ -1,5 +1,6 @@
 import pygame
 import time
+import random
 
 #x = pygame.init()
 #print(x)
@@ -36,6 +37,9 @@ def message_to_screen(msg,color):
     screen_text = font.render(msg, True, color)
     gameDisplay.blit(screen_text, [display_width/2.5, display_height/2.5])
 
+def roundTo10(number):
+    return round(number/10.0) * 10.0
+
 def gameLoop():
     gameExit = False
     gameOver = False
@@ -45,6 +49,11 @@ def gameLoop():
     lead_y = display_height / 2
     lead_x_change = 0
     lead_y_change = 0
+
+    #a random number from 0 to 790 could by 113.  that pixel wouldn't line up with our block_size snake head
+    #so we round that 113 to something like 110.  or we round 116 to 120.  now it lines up with the snake
+    randAppleX = roundTo10(random.randrange(0, display_width-block_size))
+    randAppleY = roundTo10(random.randrange(0, display_height-block_size))
 
     #main game loop
     while not gameExit:
@@ -96,10 +105,17 @@ def gameLoop():
         lead_x += lead_x_change
         lead_y += lead_y_change
 
+
+
         gameDisplay.fill(white)
 
+        #draw the apple
+        pygame.draw.rect(gameDisplay, red, [randAppleX, randAppleY, block_size, block_size])
+
         #x,y,width,height
+        #draw the snake
         pygame.draw.rect(gameDisplay,black,[lead_x,lead_y,block_size,block_size])
+
         #pygame.draw.rect(gameDisplay, red, [400, 300, 10, 20])
 
         #another method for drawing rectangles
@@ -107,8 +123,12 @@ def gameLoop():
 
         pygame.display.update()
 
+        #check crossover of snake and apple
+        if lead_x == randAppleX and lead_y == randAppleY:
+            print("yummy")
+
         #frames per second (fps)
-        #to affect game difficulty always change movment variables first before tinkering with fps
+        #to affect game difficulty always change movement variables first before tinkering with fps
         clock.tick(FPS)
 
     pygame.quit()
