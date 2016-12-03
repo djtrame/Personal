@@ -26,12 +26,12 @@ pygame.display.set_caption('Psyqo Slither')
 
 clock = pygame.time.Clock()
 
-block_size = 10
+#thickness of the snake
+block_size = 20
+
 FPS = 20
 
 #font size 25
-#changing testing git
-#testing git again
 font = pygame.font.SysFont(None, 25)
 
 def snake(block_size, snakeList):
@@ -46,7 +46,11 @@ def message_to_screen(msg,color):
     gameDisplay.blit(screen_text, [display_width/2.5, display_height/2.5])
 
 def roundTo10(number):
-    return round(number/10.0) * 10.0
+    #this places the apple in parts of the screen divisible by 10
+    #return round(number/10.0) * 10.0
+
+    #this places the apple on the screen at odd pixel locations
+    return round(number)
 
 def gameLoop():
     gameExit = False
@@ -75,6 +79,11 @@ def gameLoop():
             pygame.display.update()
 
             for event in pygame.event.get():
+                #handle the user clicking the X on the window during the game over sequence
+                if event.type == pygame.QUIT:
+                    gameExit = True
+                    gameOver = False
+
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         gameExit = True
@@ -156,18 +165,26 @@ def gameLoop():
 
         pygame.display.update()
 
-        #check crossover of snake and apple
+        #check exact crossover of snake and apple (works as long as they have the same size)
         # if lead_x == randAppleX and lead_y == randAppleY:
         #     randAppleX = roundTo10(random.randrange(0, display_width - block_size))
         #     randAppleY = roundTo10(random.randrange(0, display_height - block_size))
         #     snakeLength += 1
 
         #handle a bigger apple crossover
-        if lead_x >= randAppleX and lead_x <= randAppleX + appleThickness:
-            if lead_y >= randAppleY and lead_y <= randAppleY + appleThickness:
+        # if lead_x >= randAppleX and lead_x <= randAppleX + appleThickness:
+        #     if lead_y >= randAppleY and lead_y <= randAppleY + appleThickness:
+        #         randAppleX = roundTo10(random.randrange(0, display_width - block_size))
+        #         randAppleY = roundTo10(random.randrange(0, display_height - block_size))
+        #         snakeLength += 1
+
+        #handle more exact partial crossovers
+        if (lead_x > randAppleX and lead_x < randAppleX+appleThickness) or (lead_x+block_size > randAppleX and lead_x+block_size < randAppleX + appleThickness):
+            if (lead_y > randAppleY and lead_y < randAppleY+appleThickness) or (lead_y+block_size > randAppleY and lead_y+block_size < randAppleY+appleThickness):
                 randAppleX = roundTo10(random.randrange(0, display_width - block_size))
                 randAppleY = roundTo10(random.randrange(0, display_height - block_size))
                 snakeLength += 1
+
 
 
         #frames per second (fps)
