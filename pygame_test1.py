@@ -21,6 +21,8 @@ display_height = 600
 gameDisplay = pygame.display.set_mode((display_width,display_height))
 pygame.display.set_caption('Psyqo Slither')
 
+imgSnakehead = pygame.image.load('snakehead.png')
+
 #pygame.display.flip()
 #pygame.display.update()
 
@@ -29,21 +31,46 @@ clock = pygame.time.Clock()
 #thickness of the snake
 block_size = 20
 
-FPS = 20
+FPS = 10
+
+direction = "right"
 
 #font size 25
 font = pygame.font.SysFont(None, 25)
 
 def snake(block_size, snakeList):
-    for XnY in snakeList:
+    if direction == "right":
+        head = pygame.transform.rotate(imgSnakehead, 270)
+    if direction == "down":
+        head = pygame.transform.rotate(imgSnakehead, 180)
+    if direction == "left":
+        head = pygame.transform.rotate(imgSnakehead, 90)
+    if direction == "up":
+        head = imgSnakehead
+
+    #the head of our snake is the last (-1) element of the list
+    gameDisplay.blit(head, (snakeList[-1][0], snakeList[-1][1]))
+
+    #loop through everything except the very last element
+    for XnY in snakeList[:-1]:
         # x,y,width,height
         # draw the snake
         #pygame.draw.rect(gameDisplay, darkgreen, [lead_x, lead_y, block_size, block_size])
         pygame.draw.rect(gameDisplay, darkgreen, [XnY[0],XnY[1],block_size,block_size])
 
+#return a tuple?
+def text_objects(text,color):
+    textSurface = font.render(text, True, color)
+    return textSurface, textSurface.get_rect()
+
 def message_to_screen(msg,color):
-    screen_text = font.render(msg, True, color)
-    gameDisplay.blit(screen_text, [display_width/2.5, display_height/2.5])
+    textSurface, textRect = text_objects(msg,color)
+    textRect.center = (display_width / 2), (display_height / 2)
+    gameDisplay.blit(textSurface, textRect)
+
+    # screen_text = font.render(msg, True, color)
+    # gameDisplay.blit(screen_text, [display_width/2.5, display_height/2.5])
+
 
 def roundTo10(number):
     #this places the apple in parts of the screen divisible by 10
@@ -53,13 +80,18 @@ def roundTo10(number):
     return round(number)
 
 def gameLoop():
+    #this allows us to access and modify direction.  without global you can only access
+    global direction
     gameExit = False
     gameOver = False
 
     # leader of the group of blocks.  the head of the snake.
     lead_x = display_width / 2
     lead_y = display_height / 2
-    lead_x_change = 0
+
+    #if these values are 0 the snake does not move at the start
+    #values >0 begin moving the snake in a particular direction
+    lead_x_change = 10
     lead_y_change = 0
 
     snakeList = []
@@ -100,15 +132,19 @@ def gameLoop():
                 if event.key == pygame.K_LEFT:
                     lead_x_change = -block_size
                     lead_y_change = 0
+                    direction = "left"
                 elif event.key == pygame.K_RIGHT:
                     lead_x_change = block_size
                     lead_y_change = 0
+                    direction = "right"
                 elif event.key == pygame.K_UP:
                     lead_y_change = -block_size
                     lead_x_change = 0
+                    direction = "up"
                 elif event.key == pygame.K_DOWN:
                     lead_y_change = block_size
                     lead_x_change = 0
+                    direction = "down"
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
