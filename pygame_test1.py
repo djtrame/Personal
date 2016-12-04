@@ -43,6 +43,36 @@ smallfont = pygame.font.SysFont("comicsansms", 25)
 mediumfont = pygame.font.SysFont("comicsansms", 50)
 largefont = pygame.font.SysFont("comicsansms", 80)
 
+def pause():
+    paused = True
+
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    paused = False
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+
+        #gameDisplay.fill(white)
+        message_to_screen("Paused...", black, -100, "large")
+
+        message_to_screen("Press C to continue or Q to quit...",
+                          black,
+                          25)
+
+        pygame.display.update()
+        clock.tick(5)
+
+def score(score):
+    text = smallfont.render("Score: "+str(score), True, black)
+    gameDisplay.blit(text, [0,0])
+
 def randAppleCoordinates():
     randAppleX = roundTo10(random.randrange(0, display_width - appleThickness))
     randAppleY = roundTo10(random.randrange(0, display_height - appleThickness))
@@ -85,7 +115,7 @@ def game_intro():
                           black,
                           y_displace=50,
                           size="small")
-        message_to_screen("Press C to play or Q to quit...",
+        message_to_screen("Press C to play, P to pause or Q to quit...",
                           black,
                           y_displace=180,
                           size="small")
@@ -157,6 +187,7 @@ def gameLoop():
 
     #a random number from 0 to 790 could by 113.  that pixel wouldn't line up with our block_size snake head
     #so we round that 113 to something like 110.  or we round 116 to 120.  now it lines up with the snake
+    #use tuple unpacking
     randAppleX,randAppleY = randAppleCoordinates()
     # randAppleX = roundTo10(random.randrange(0, display_width-appleThickness))
     # randAppleY = roundTo10(random.randrange(0, display_height-appleThickness))
@@ -196,21 +227,29 @@ def gameLoop():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    lead_x_change = -block_size
-                    lead_y_change = 0
-                    direction = "left"
+                    #prevent the snake from turning directly around if it is bigger than 2 segments
+                    #this also prevents a game crash for doing so
+                    if not (direction == "right" and snakeLength > 2):
+                        lead_x_change = -block_size
+                        lead_y_change = 0
+                        direction = "left"
                 elif event.key == pygame.K_RIGHT:
-                    lead_x_change = block_size
-                    lead_y_change = 0
-                    direction = "right"
+                    if not (direction == "left" and snakeLength > 2):
+                        lead_x_change = block_size
+                        lead_y_change = 0
+                        direction = "right"
                 elif event.key == pygame.K_UP:
-                    lead_y_change = -block_size
-                    lead_x_change = 0
-                    direction = "up"
+                    if not (direction == "down" and snakeLength > 2):
+                        lead_y_change = -block_size
+                        lead_x_change = 0
+                        direction = "up"
                 elif event.key == pygame.K_DOWN:
-                    lead_y_change = block_size
-                    lead_x_change = 0
-                    direction = "down"
+                    if not (direction == "up" and snakeLength > 2):
+                        lead_y_change = block_size
+                        lead_x_change = 0
+                        direction = "down"
+                elif event.key == pygame.K_p:
+                    pause()
 
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -261,6 +300,8 @@ def gameLoop():
 
         #another method for drawing rectangles
         #gameDisplay.fill(red,rect=[200,200,50,50])
+
+        score(snakeLength-1)
 
         pygame.display.update()
 
