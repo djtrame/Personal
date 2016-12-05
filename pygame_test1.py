@@ -34,17 +34,28 @@ clock = pygame.time.Clock()
 #thickness of the snake
 block_size = 20
 appleThickness = 30
-FPS = 10
+FPS = 15
 
 direction = "right"
 
 #font size 25
-smallfont = pygame.font.SysFont("comicsansms", 25)
-mediumfont = pygame.font.SysFont("comicsansms", 50)
-largefont = pygame.font.SysFont("comicsansms", 80)
+# smallfont = pygame.font.SysFont("comicsansms", 25)
+# mediumfont = pygame.font.SysFont("comicsansms", 50)
+# largefont = pygame.font.SysFont("comicsansms", 80)
+smallfont = pygame.font.Font("fonts/freesansbold.ttf", 25)
+mediumfont = pygame.font.Font("fonts/freesansbold.ttf", 50)
+largefont = pygame.font.Font("fonts/freesansbold.ttf", 80)
 
 def pause():
     paused = True
+
+    message_to_screen("Paused...", black, -100, "large")
+
+    message_to_screen("Press C to continue or Q to quit...",
+                      black,
+                      25)
+
+    pygame.display.update()
 
     while paused:
         for event in pygame.event.get():
@@ -60,17 +71,33 @@ def pause():
                     quit()
 
         #gameDisplay.fill(white)
-        message_to_screen("Paused...", black, -100, "large")
 
-        message_to_screen("Press C to continue or Q to quit...",
-                          black,
-                          25)
-
-        pygame.display.update()
         clock.tick(5)
 
+#weird code to trick cx_Freeze into working
+if False:
+    import pygame._view
+
 def score(score):
-    text = smallfont.render("Score: "+str(score), True, black)
+    #score being passed in is snakeLength-1
+    if score < 11:
+        calcScore = score
+    elif score >= 11 and score < 21:
+        calcScore = score * 5
+    elif score >= 21 and score < 31:
+        calcScore = score * 10
+    elif score >= 31 and score < 41:
+        calcScore = score * 20
+    elif score >= 41 and score < 51:
+        calcScore = score * 40
+    elif score >= 51 and score < 61:
+        calcScore = score * 80
+    elif score >= 61 and score < 71:
+        calcScore = score * 160
+    else:
+        calcScore = score * 250
+
+    text = smallfont.render("Score: "+str(calcScore), True, black)
     gameDisplay.blit(text, [0,0])
 
 def randAppleCoordinates():
@@ -195,8 +222,7 @@ def gameLoop():
     #main game loop
     while not gameExit:
 
-        while gameOver == True:
-            gameDisplay.fill(white)
+        if gameOver == True:
             message_to_screen("Game Over!",
                               red,
                               y_displace=-50,
@@ -206,6 +232,9 @@ def gameLoop():
                               y_displace=50,
                               size="medium")
             pygame.display.update()
+
+        while gameOver == True:
+            #gameDisplay.fill(white)
 
             for event in pygame.event.get():
                 #handle the user clicking the X on the window during the game over sequence
@@ -230,22 +259,23 @@ def gameLoop():
                     #prevent the snake from turning directly around if it is bigger than 2 segments
                     #this also prevents a game crash for doing so
                     if not (direction == "right" and snakeLength > 2):
-                        lead_x_change = -block_size
+                        #remove the snakeLength / 10 part if you don't want the snake to speed up as it gets bigger
+                        lead_x_change = -block_size - (snakeLength / 10)
                         lead_y_change = 0
                         direction = "left"
                 elif event.key == pygame.K_RIGHT:
                     if not (direction == "left" and snakeLength > 2):
-                        lead_x_change = block_size
+                        lead_x_change = block_size + (snakeLength / 10)
                         lead_y_change = 0
                         direction = "right"
                 elif event.key == pygame.K_UP:
                     if not (direction == "down" and snakeLength > 2):
-                        lead_y_change = -block_size
+                        lead_y_change = -block_size - (snakeLength / 10)
                         lead_x_change = 0
                         direction = "up"
                 elif event.key == pygame.K_DOWN:
                     if not (direction == "up" and snakeLength > 2):
-                        lead_y_change = block_size
+                        lead_y_change = block_size + (snakeLength / 10)
                         lead_x_change = 0
                         direction = "down"
                 elif event.key == pygame.K_p:
