@@ -7,6 +7,6 @@ cx_Freeze.setup(
     options={"build_exe": {"packages":["pygame"],
                            "include_files":["apple.png","snakehead.png"]}},
     description = "Simple Snake Game",
-    executables = executables
-
+    executables = executables,
+    version = "0.1"
     )
