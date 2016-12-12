@@ -260,22 +260,22 @@ def gameLoop():
                     #this also prevents a game crash for doing so
                     if not (direction == "right" and snakeLength > 2):
                         #remove the snakeLength / 10 part if you don't want the snake to speed up as it gets bigger
-                        lead_x_change = -block_size - (snakeLength / 10)
+                        lead_x_change = -block_size
                         lead_y_change = 0
                         direction = "left"
                 elif event.key == pygame.K_RIGHT:
                     if not (direction == "left" and snakeLength > 2):
-                        lead_x_change = block_size + (snakeLength / 10)
+                        lead_x_change = block_size
                         lead_y_change = 0
                         direction = "right"
                 elif event.key == pygame.K_UP:
                     if not (direction == "down" and snakeLength > 2):
-                        lead_y_change = -block_size - (snakeLength / 10)
+                        lead_y_change = -block_size
                         lead_x_change = 0
                         direction = "up"
                 elif event.key == pygame.K_DOWN:
                     if not (direction == "up" and snakeLength > 2):
-                        lead_y_change = block_size + (snakeLength / 10)
+                        lead_y_change = block_size
                         lead_x_change = 0
                         direction = "down"
                 elif event.key == pygame.K_p:
