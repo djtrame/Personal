@@ -20,6 +20,13 @@ lightyellow = (255,255,0)
 display_width = 800
 display_height = 600
 
+mainTankX = display_width * 0.9
+mainTankY = display_height * 0.8
+tankWidth = 40
+tankHeight = 20
+turretWidth = 5
+wheelWidth = 5
+
 gameDisplay = pygame.display.set_mode((display_width,display_height))
 pygame.display.set_caption('Psyqo Tank')
 
@@ -37,6 +44,10 @@ clock = pygame.time.Clock()
 block_size = 20
 appleThickness = 30
 FPS = 15
+
+#not sure how to kill menu loops in game intro and game controls.  this doesn't seem to do it.
+inControlsMenu = False
+inMainMenu = False
 
 #font size 25
 # smallfont = pygame.font.SysFont("comicsansms", 25)
@@ -100,11 +111,44 @@ def score(score):
     text = smallfont.render("Score: "+str(calcScore), True, black)
     gameDisplay.blit(text, [0,0])
 
+def tank(x,y,turretPos):
+    x = int(x)
+    y = int(y)
+
+    possibleTurrets = [(x-27,y-2),
+                       (x-26,y-5),
+                       (x-25,y-8),
+                       (x-23,y-12),
+                       (x-20,y-14),
+                       (x - 18, y - 15),
+                       (x - 15, y - 17),
+                       (x - 13, y - 19),
+                       (x - 11, y - 21)]
+
+    #draw the turret
+    pygame.draw.circle(gameDisplay, black, (x,y),int(tankHeight / 2))
+    #draw the tank
+    pygame.draw.rect(gameDisplay, black, (x-tankHeight, y, tankWidth, tankHeight))
+
+    #draw the gun
+    pygame.draw.line(gameDisplay,black, (x,y), possibleTurrets[turretPos], turretWidth)
+
+    # pygame.draw.circle(gameDisplay, black, (x - 15, y + 20), wheelWidth)
+
+    startWheelX = 15
+
+    #0 thru 6
+    for i in range(7):
+        pygame.draw.circle(gameDisplay, black, (x-startWheelX,y+21), wheelWidth)
+        startWheelX -= 5
+
 #runs once
 def game_intro():
-    intro = True
+    global inMainMenu
+    inMainMenu = True
+    # intro = True
 
-    while intro:
+    while inMainMenu:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -148,6 +192,51 @@ def game_intro():
         pygame.display.update()
         clock.tick(15)
 
+def game_controls():
+    # gameControls = True
+    global inControlsMenu
+    inControlsMenu = True
+
+    while inControlsMenu:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+
+
+        gameDisplay.fill(white)
+
+        message_to_screen("Controls",
+                          green,
+                          y_displace=-100,
+                          size="medium")
+        message_to_screen("Fire: Spacebar",
+                          black,
+                          y_displace=-30,
+                          size="small")
+        message_to_screen("Move Turret: Up and Down Arrows",
+                          black,
+                          y_displace=10,
+                          size="small")
+        message_to_screen("Move Tank: Left and Right Arrows",
+                          black,
+                          y_displace=50,
+                          size="small")
+        message_to_screen("Pause: P",
+                          black,
+                          y_displace=90,
+                          size="small")
+
+        createButton("Play", 150,500,110,50,darkgreen, green, action="play")
+        createButton("Main Menu", 350, 500, 110, 50, yellow, lightyellow, action="mainmenu")
+        createButton("Quit", 550, 500, 110, 50, red, lightred, action="quit")
+
+
+        pygame.display.update()
+        clock.tick(15)
+
 #return a tuple?
 def text_objects(text,color,size):
     if size == "small":
@@ -169,6 +258,8 @@ def message_to_screen(msg,color,y_displace=0, size="small"):
     gameDisplay.blit(textSurface, textRect)
 
 def createButton(text, x, y, width, height, inactiveColor, activeColor,action=None):
+    global inMainMenu
+    global inControlsMenu
     cursor = pygame.mouse.get_pos()
     #print (cursor)
 
@@ -187,10 +278,18 @@ def createButton(text, x, y, width, height, inactiveColor, activeColor,action=No
                 quit()
 
             if action == "controls":
-                pass
+                inMainMenu = False
+                game_controls()
 
             if action == "play":
+                inMainMenu = False
+                inControlsMenu = False
                 gameLoop()
+
+            #not working?  we aren't quitting the original loops
+            if action == "mainmenu":
+                inControlsMenu = False
+                game_intro()
     else:
         pygame.draw.rect(gameDisplay, inactiveColor, (x, y, width, height))
 
@@ -203,13 +302,20 @@ def roundTo10(number):
     #this places the apple on the screen at odd pixel locations
     return round(number)
 
-def gameLoop():
-    #this allows us to access and modify direction.  without global you can only access
-    global direction
+def barrier():
+    locationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
 
-    direction = "right"
+
+def gameLoop():
     gameExit = False
     gameOver = False
+
+    mainTankX = display_width * 0.9
+    mainTankY = display_height * 0.8
+    tankMove = 0
+
+    currentTurretPos = 0
+    changeTurretPos = 0
 
     #main game loop
     while not gameExit:
@@ -248,17 +354,35 @@ def gameLoop():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_LEFT:
-                    pass
+                    tankMove = -5
                 elif event.key == pygame.K_RIGHT:
-                    pass
+                    tankMove = 5
                 elif event.key == pygame.K_UP:
-                    pass
+                    changeTurretPos = 1
                 elif event.key == pygame.K_DOWN:
-                    pass
+                    changeTurretPos = -1
                 elif event.key == pygame.K_p:
                     pause()
+            elif event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    tankMove = 0
+
+                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                    changeTurretPos = 0
+
 
         gameDisplay.fill(white)
+
+        mainTankX += tankMove
+
+        currentTurretPos += changeTurretPos
+
+        if currentTurretPos > 8:
+            currentTurretPos = 8
+        elif currentTurretPos < 0:
+            currentTurretPos = 0
+
+        tank(mainTankX, mainTankY,currentTurretPos)
 
         pygame.display.update()
 
