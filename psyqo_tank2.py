@@ -20,8 +20,6 @@ lightyellow = (255,255,0)
 display_width = 800
 display_height = 600
 
-mainTankX = display_width * 0.9
-mainTankY = display_height * 0.8
 tankWidth = 40
 tankHeight = 20
 turretWidth = 5
@@ -40,9 +38,6 @@ pygame.display.set_caption('Psyqo Tank')
 
 clock = pygame.time.Clock()
 
-#thickness of the snake
-block_size = 20
-appleThickness = 30
 FPS = 15
 
 #not sure how to kill menu loops in game intro and game controls.  this doesn't seem to do it.
@@ -141,6 +136,8 @@ def tank(x,y,turretPos):
     for i in range(7):
         pygame.draw.circle(gameDisplay, black, (x-startWheelX,y+21), wheelWidth)
         startWheelX -= 5
+
+    return possibleTurrets[turretPos]
 
 #runs once
 def game_intro():
@@ -302,8 +299,29 @@ def roundTo10(number):
     #this places the apple on the screen at odd pixel locations
     return round(number)
 
-def barrier():
-    locationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
+def barrier(locationX, randomHeight, barrier_width):
+    pygame.draw.rect(gameDisplay, black, [locationX, display_height-randomHeight, barrier_width, randomHeight])
+
+def fireShell(gunCoordinates, tankX, tankY, turretPos):
+    fire = True
+
+    #can't modify tuples, convert it to a list instead
+    startingShell = list(gunCoordinates)
+    print("FIRE!")
+
+    while fire:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        print(startingShell[0],startingShell[1])
+        pygame.draw.circle(gameDisplay,red,(startingShell[0],startingShell[1]),5)
+
+        startingShell[0] -= 5
+
+        pygame.display.update()
+        clock.tick(5)
 
 
 def gameLoop():
@@ -311,14 +329,21 @@ def gameLoop():
     gameOver = False
 
     mainTankX = display_width * 0.9
-    mainTankY = display_height * 0.8
+    mainTankY = display_height * 0.9
     tankMove = 0
 
     currentTurretPos = 0
     changeTurretPos = 0
 
+    locationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
+    randomHeight = random.randrange(display_height * 0.1, display_height * 0.6)
+    barrier_width = 40
+
     #main game loop
     while not gameExit:
+
+        gameDisplay.fill(white)
+        gun = tank(mainTankX, mainTankY, currentTurretPos)
 
         if gameOver == True:
             message_to_screen("Game Over!",
@@ -363,15 +388,15 @@ def gameLoop():
                     changeTurretPos = -1
                 elif event.key == pygame.K_p:
                     pause()
+                elif event.key == pygame.K_SPACE:
+                    fireShell(gun,mainTankX,mainTankY,currentTurretPos)
+
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
                     tankMove = 0
 
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                     changeTurretPos = 0
-
-
-        gameDisplay.fill(white)
 
         mainTankX += tankMove
 
@@ -382,7 +407,10 @@ def gameLoop():
         elif currentTurretPos < 0:
             currentTurretPos = 0
 
-        tank(mainTankX, mainTankY,currentTurretPos)
+        if mainTankX - (tankWidth / 2) < locationX + barrier_width:
+            mainTankX += 5
+
+        barrier(locationX, randomHeight, barrier_width)
 
         pygame.display.update()
 
