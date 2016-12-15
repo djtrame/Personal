@@ -318,10 +318,17 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos):
         print(startingShell[0],startingShell[1])
         pygame.draw.circle(gameDisplay,red,(startingShell[0],startingShell[1]),5)
 
-        startingShell[0] -= 5
+        startingShell[0] -= (12 - turretPos)*2
+
+        #quadratic equation example
+        #y = x^2  y = x**2
+        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01)**2) - (turretPos + turretPos/(12-turretPos)))
+
+        if startingShell[1] > display_height:
+            fire = False
 
         pygame.display.update()
-        clock.tick(5)
+        clock.tick(50)
 
 
 def gameLoop():
