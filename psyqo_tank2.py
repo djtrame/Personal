@@ -38,7 +38,7 @@ pygame.display.set_caption('Psyqo Tank')
 
 clock = pygame.time.Clock()
 
-FPS = 15
+FPS = 30
 
 #not sure how to kill menu loops in game intro and game controls.  this doesn't seem to do it.
 inControlsMenu = False
@@ -137,6 +137,7 @@ def tank(x,y,turretPos):
         pygame.draw.circle(gameDisplay, black, (x-startWheelX,y+21), wheelWidth)
         startWheelX -= 5
 
+    #return the turret position of the tank
     return possibleTurrets[turretPos]
 
 #runs once
@@ -302,7 +303,35 @@ def roundTo10(number):
 def barrier(locationX, randomHeight, barrier_width):
     pygame.draw.rect(gameDisplay, black, [locationX, display_height-randomHeight, barrier_width, randomHeight])
 
-def fireShell(gunCoordinates, tankX, tankY, turretPos):
+def explosion(x,y, size=50):
+    explode = True
+
+    while explode:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        startPoint = x,y
+
+        colorChoices = [red, lightred, yellow, lightyellow]
+
+        magnitude = 1
+
+        while magnitude < size:
+            exploding_bit_x = x + random.randrange(-1*magnitude,magnitude)
+            exploding_bit_y = y + random.randrange(-1 * magnitude, magnitude)
+
+            pygame.draw.circle(gameDisplay, colorChoices[random.randrange(0,4)], (exploding_bit_x,exploding_bit_y),random.randrange(1,5))
+            magnitude += 1
+
+            pygame.display.update()
+            clock.tick(100)
+
+        explode = False
+
+
+def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrier_width,randomHeight):
     fire = True
 
     #can't modify tuples, convert it to a list instead
@@ -322,13 +351,43 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos):
 
         #quadratic equation example
         #y = x^2  y = x**2
-        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01)**2) - (turretPos + turretPos/(12-turretPos)))
+        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01/(gun_power/50))**2) - (turretPos + turretPos/(12-turretPos)))
 
         if startingShell[1] > display_height:
+            print("Last shell:",startingShell[0],startingShell[1])
+            #determine estimated spot of last impact
+            #cross multiplication
+            #(x/600) = (189/618) for instance
+            #618x = (600 * 189)
+            #x = (113,400) / 618
+            #x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
+            hit_x = int((startingShell[0]*display_height)/startingShell[1])
+            hit_y = int(display_height)
+            print ("Impact:",hit_x,hit_y)
+            explosion(hit_x , hit_y)
+            fire = False
+
+        #do comparisons and store them as booleans
+        check_x_1 = startingShell[0] <= locationX + barrier_width
+        check_x_2 = startingShell[0] >= locationX
+
+        check_y_1 = startingShell[1] <= display_height
+        check_y_2 = startingShell[1] >= display_height - randomHeight
+
+        if check_x_1 and check_x_2 and check_y_1 and check_y_2:
+            print("Last shell:", startingShell[0], startingShell[1])
+            hit_x = int(startingShell[0])
+            hit_y = int(startingShell[1])
+            print ("Impact:",hit_x,hit_y)
+            explosion(hit_x , hit_y)
             fire = False
 
         pygame.display.update()
-        clock.tick(50)
+        clock.tick(100)
+
+def power(level):
+    text = smallfont.render("Power: " + str(level) + "%", True, black)
+    gameDisplay.blit(text,[display_width / 2, 0])
 
 
 def gameLoop():
@@ -342,15 +401,15 @@ def gameLoop():
     currentTurretPos = 0
     changeTurretPos = 0
 
+    fire_power = 50
+    power_change = 0
+
     locationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
     randomHeight = random.randrange(display_height * 0.1, display_height * 0.6)
     barrier_width = 40
 
     #main game loop
     while not gameExit:
-
-        gameDisplay.fill(white)
-        gun = tank(mainTankX, mainTankY, currentTurretPos)
 
         if gameOver == True:
             message_to_screen("Game Over!",
@@ -396,7 +455,12 @@ def gameLoop():
                 elif event.key == pygame.K_p:
                     pause()
                 elif event.key == pygame.K_SPACE:
-                    fireShell(gun,mainTankX,mainTankY,currentTurretPos)
+                    fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,locationX,barrier_width,randomHeight)
+
+                elif event.key == pygame.K_a:
+                    power_change = -1
+                elif event.key == pygame.K_d:
+                    power_change = 1
 
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
@@ -404,6 +468,9 @@ def gameLoop():
 
                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
                     changeTurretPos = 0
+
+                if event.key == pygame.K_a or event.key == pygame.K_d:
+                    power_change = 0
 
         mainTankX += tankMove
 
@@ -416,6 +483,15 @@ def gameLoop():
 
         if mainTankX - (tankWidth / 2) < locationX + barrier_width:
             mainTankX += 5
+
+        # clear the display
+        gameDisplay.fill(white)
+
+        # draw the tank and store the position of the turret
+        gun = tank(mainTankX, mainTankY, currentTurretPos)
+
+        fire_power += power_change
+        power(fire_power)
 
         barrier(locationX, randomHeight, barrier_width)
 
