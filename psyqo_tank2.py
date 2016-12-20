@@ -25,6 +25,8 @@ tankHeight = 20
 turretWidth = 5
 wheelWidth = 5
 
+ground_height = 35
+
 gameDisplay = pygame.display.set_mode((display_width,display_height))
 pygame.display.set_caption('Psyqo Tank')
 
@@ -119,6 +121,40 @@ def tank(x,y,turretPos):
                        (x - 15, y - 17),
                        (x - 13, y - 19),
                        (x - 11, y - 21)]
+
+    #draw the turret
+    pygame.draw.circle(gameDisplay, black, (x,y),int(tankHeight / 2))
+    #draw the tank
+    pygame.draw.rect(gameDisplay, black, (x-tankHeight, y, tankWidth, tankHeight))
+
+    #draw the gun
+    pygame.draw.line(gameDisplay,black, (x,y), possibleTurrets[turretPos], turretWidth)
+
+    # pygame.draw.circle(gameDisplay, black, (x - 15, y + 20), wheelWidth)
+
+    startWheelX = 15
+
+    #0 thru 6
+    for i in range(7):
+        pygame.draw.circle(gameDisplay, black, (x-startWheelX,y+21), wheelWidth)
+        startWheelX -= 5
+
+    #return the turret position of the tank
+    return possibleTurrets[turretPos]
+
+def enemy_tank(x,y,turretPos):
+    x = int(x)
+    y = int(y)
+
+    possibleTurrets = [(x+27,y-2),
+                       (x+26,y-5),
+                       (x+25,y-8),
+                       (x+23,y-12),
+                       (x+20,y-14),
+                       (x + 18, y - 15),
+                       (x + 15, y - 17),
+                       (x + 13, y - 19),
+                       (x + 11, y - 21)]
 
     #draw the turret
     pygame.draw.circle(gameDisplay, black, (x,y),int(tankHeight / 2))
@@ -300,8 +336,8 @@ def roundTo10(number):
     #this places the apple on the screen at odd pixel locations
     return round(number)
 
-def barrier(locationX, randomHeight, barrier_width):
-    pygame.draw.rect(gameDisplay, black, [locationX, display_height-randomHeight, barrier_width, randomHeight])
+def barrier(barrierLocationX, randomHeight, barrier_width):
+    pygame.draw.rect(gameDisplay, black, [barrierLocationX, display_height-randomHeight, barrier_width, randomHeight])
 
 def explosion(x,y, size=50):
     explode = True
@@ -331,12 +367,13 @@ def explosion(x,y, size=50):
         explode = False
 
 
-def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrier_width,randomHeight):
+def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY):
     fire = True
+    damage = 0
 
     #can't modify tuples, convert it to a list instead
     startingShell = list(gunCoordinates)
-    print("FIRE!")
+    #print("FIRE!")
 
     while fire:
         for event in pygame.event.get():
@@ -344,7 +381,7 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrie
                 pygame.quit()
                 quit()
 
-        print(startingShell[0],startingShell[1])
+        #print(startingShell[0],startingShell[1])
         pygame.draw.circle(gameDisplay,red,(startingShell[0],startingShell[1]),5)
 
         startingShell[0] -= (12 - turretPos)*2
@@ -353,7 +390,10 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrie
         #y = x^2  y = x**2
         startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01/(gun_power/50))**2) - (turretPos + turretPos/(12-turretPos)))
 
-        if startingShell[1] > display_height:
+        actual_ground = display_height - ground_height
+
+        #if the shell has hit the ground
+        if startingShell[1] > actual_ground:
             print("Last shell:",startingShell[0],startingShell[1])
             #determine estimated spot of last impact
             #cross multiplication
@@ -361,15 +401,18 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrie
             #618x = (600 * 189)
             #x = (113,400) / 618
             #x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
-            hit_x = int((startingShell[0]*display_height)/startingShell[1])
-            hit_y = int(display_height)
+            hit_x = int((startingShell[0]*actual_ground)/startingShell[1])
+            hit_y = int(actual_ground)
+            if enemyTankX + 15 > hit_x  > enemyTankX - 15:
+                print("HIT TARGET!")
+                damage = 25
             print ("Impact:",hit_x,hit_y)
             explosion(hit_x , hit_y)
             fire = False
 
         #do comparisons and store them as booleans
-        check_x_1 = startingShell[0] <= locationX + barrier_width
-        check_x_2 = startingShell[0] >= locationX
+        check_x_1 = startingShell[0] <= barrierLocationX + barrier_width
+        check_x_2 = startingShell[0] >= barrierLocationX
 
         check_y_1 = startingShell[1] <= display_height
         check_y_2 = startingShell[1] >= display_height - randomHeight
@@ -385,26 +428,168 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,locationX,barrie
         pygame.display.update()
         clock.tick(100)
 
+    return damage
+
+def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,pTankX,pTankY):
+    currentPower = 1
+    power_found = False
+    damage = 0
+
+    while not power_found:
+        currentPower += 1
+        if currentPower > 100:
+            power_found = True
+
+        fire = True
+
+        # can't modify tuples, convert it to a list instead
+        startingShell = list(gunCoordinates)
+
+        while fire:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
+
+            startingShell[0] += (12 - turretPos) * 2
+
+            # quadratic equation example
+            # y = x^2  y = x**2
+            startingShell[1] += int((((startingShell[0] - gunCoordinates[0]) * 0.01 / (currentPower / 50)) ** 2) - (
+            turretPos + turretPos / (12 - turretPos)))
+
+            actual_ground = display_height - ground_height
+
+            # if the shell has hit the ground
+            if startingShell[1] > actual_ground:
+                # determine estimated spot of last impact
+                # cross multiplication
+                # (x/600) = (189/618) for instance
+                # 618x = (600 * 189)
+                # x = (113,400) / 618
+                # x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
+                hit_x = int((startingShell[0] * actual_ground) / startingShell[1])
+                hit_y = int(actual_ground)
+                if pTankX + 15 > hit_x > pTankX - 15:
+                    print("target acquired!")
+                    power_found = True
+                fire = False
+
+            # do comparisons and store them as booleans
+            check_x_1 = startingShell[0] <= barrierLocationX + barrier_width
+            check_x_2 = startingShell[0] >= barrierLocationX
+
+            check_y_1 = startingShell[1] <= display_height
+            check_y_2 = startingShell[1] >= display_height - randomHeight
+
+            if check_x_1 and check_x_2 and check_y_1 and check_y_2:
+                hit_x = int(startingShell[0])
+                hit_y = int(startingShell[1])
+                fire = False
+
+    fire = True
+
+    #can't modify tuples, convert it to a list instead
+    startingShell = list(gunCoordinates)
+    #print("FIRE!")
+
+    while fire:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        #print(startingShell[0],startingShell[1])
+        pygame.draw.circle(gameDisplay,red,(startingShell[0],startingShell[1]),5)
+
+        startingShell[0] += (12 - turretPos)*2
+
+        #quadratic equation example
+        #y = x^2  y = x**2
+        #y = -x^2 produces an upside down U which is the shape of an arch.  booyah!
+        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01/(currentPower/50))**2) - (turretPos + turretPos/(12-turretPos)))
+
+        actual_ground = display_height - ground_height
+
+        #if the shell has hit the ground
+        if startingShell[1] > actual_ground:
+            #determine estimated spot of last impact
+            #cross multiplication
+            #(x/600) = (189/618) for instance
+            #618x = (600 * 189)
+            #x = (113,400) / 618
+            #x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
+            hit_x = int((startingShell[0]*actual_ground)/startingShell[1])
+            hit_y = int(actual_ground)
+            if pTankX + 15 > hit_x  > pTankX - 15:
+                print("HIT TARGET!")
+                damage = 25
+            explosion(hit_x , hit_y)
+            fire = False
+
+        #do comparisons and store them as booleans
+        check_x_1 = startingShell[0] <= barrierLocationX + barrier_width
+        check_x_2 = startingShell[0] >= barrierLocationX
+
+        check_y_1 = startingShell[1] <= display_height
+        check_y_2 = startingShell[1] >= display_height - randomHeight
+
+
+        if check_x_1 and check_x_2 and check_y_1 and check_y_2:
+            print("Last shell:", startingShell[0], startingShell[1])
+            hit_x = int(startingShell[0])
+            hit_y = int(startingShell[1])
+            print ("Impact:",hit_x,hit_y)
+            explosion(hit_x , hit_y)
+            fire = False
+
+        pygame.display.update()
+        clock.tick(100)
+    return damage
+
 def power(level):
     text = smallfont.render("Power: " + str(level) + "%", True, black)
     gameDisplay.blit(text,[display_width / 2, 0])
 
+def health_bars(player_health, enemy_health):
+    if player_health > 75:
+        player_health_color = green
+    elif player_health > 50:
+        player_health_color = yellow
+    else:
+        player_health_color = red
+
+    if enemy_health > 75:
+        enemy_health_color = green
+    elif enemy_health > 50:
+        enemy_health_color = yellow
+    else:
+        enemy_health_color = red
+
+    pygame.draw.rect(gameDisplay, player_health_color, (680,25,player_health,25))
+    pygame.draw.rect(gameDisplay, enemy_health_color, (20, 25, enemy_health, 25))
 
 def gameLoop():
     gameExit = False
     gameOver = False
 
+    player_health = 100
+    enemy_health = 100
+
+
     mainTankX = display_width * 0.9
     mainTankY = display_height * 0.9
     tankMove = 0
-
     currentTurretPos = 0
     changeTurretPos = 0
+
+    enemyTankX = display_width * 0.1
+    enemyTankY = display_height * 0.9
 
     fire_power = 50
     power_change = 0
 
-    locationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
+    barrierLocationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
     randomHeight = random.randrange(display_height * 0.1, display_height * 0.6)
     barrier_width = 40
 
@@ -455,7 +640,12 @@ def gameLoop():
                 elif event.key == pygame.K_p:
                     pause()
                 elif event.key == pygame.K_SPACE:
-                    fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,locationX,barrier_width,randomHeight)
+                    damage = fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY)
+                    enemy_health -= damage
+
+                    damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,
+                              randomHeight,mainTankX,mainTankY)
+                    player_health -= damage
 
                 elif event.key == pygame.K_a:
                     power_change = -1
@@ -481,19 +671,24 @@ def gameLoop():
         elif currentTurretPos < 0:
             currentTurretPos = 0
 
-        if mainTankX - (tankWidth / 2) < locationX + barrier_width:
+        if mainTankX - (tankWidth / 2) < barrierLocationX + barrier_width:
             mainTankX += 5
 
         # clear the display
         gameDisplay.fill(white)
+        health_bars(player_health,enemy_health)
 
         # draw the tank and store the position of the turret
         gun = tank(mainTankX, mainTankY, currentTurretPos)
+        enemy_gun = enemy_tank(enemyTankX,enemyTankY,8)
 
         fire_power += power_change
         power(fire_power)
 
-        barrier(locationX, randomHeight, barrier_width)
+        barrier(barrierLocationX, randomHeight, barrier_width)
+
+        #draw the ground over the barrier
+        gameDisplay.fill(green, rect=[0,display_height-ground_height, display_width,ground_height])
 
         pygame.display.update()
 
