@@ -42,6 +42,8 @@ FPS = 30
 #not sure how to kill menu loops in game intro and game controls.  this doesn't seem to do it.
 inControlsMenu = False
 inMainMenu = False
+inGameOverMenu = False
+inWinningMenu = False
 
 #font size 25
 # smallfont = pygame.font.SysFont("comicsansms", 25)
@@ -223,6 +225,66 @@ def game_intro():
         pygame.display.update()
         clock.tick(15)
 
+def game_over():
+    global inGameOverMenu
+    inGameOverMenu = True
+
+    while inGameOverMenu:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        gameDisplay.fill(white)
+        message_to_screen("Game Over!",
+                          green,
+                          y_displace=-100,
+                          size="medium")
+        message_to_screen("You died!",
+                          black,
+                          y_displace=-30,
+                          size="small")
+
+
+        createButton("Play Again", 150,500,150,50,darkgreen, green, action="play")
+        createButton("Controls", 350, 500, 110, 50, yellow, lightyellow, action="controls")
+        createButton("Quit", 550, 500, 110, 50, red, lightred, action="quit")
+
+
+        pygame.display.update()
+        clock.tick(15)
+
+def winning_menu():
+    global inWinningMenu
+    inWinningMenu = True
+
+    while inWinningMenu:
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+
+        gameDisplay.fill(white)
+        message_to_screen("You won!",
+                          green,
+                          y_displace=-100,
+                          size="medium")
+        message_to_screen("Congrats!",
+                          black,
+                          y_displace=-30,
+                          size="small")
+
+
+        createButton("Play Again", 150,500,150,50,darkgreen, green, action="play")
+        createButton("Controls", 350, 500, 110, 50, yellow, lightyellow, action="controls")
+        createButton("Quit", 550, 500, 110, 50, red, lightred, action="quit")
+
+
+        pygame.display.update()
+        clock.tick(15)
+
 def game_controls():
     # gameControls = True
     global inControlsMenu
@@ -386,13 +448,13 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX
         startingShellYAdjustment = int((((startingShell[0] - gunCoordinates[0])*0.01/(gun_power/50))**2) - turretPosAdjustment)
         startingShell[1] += startingShellYAdjustment
 
-        print("---------------------------------")
-        print("StartingShell X Adjustment: " + str(startingShellXAdjustment))
-        print("StartingShell X: " + str(startingShell[0]))
-        print("TurretPosAdjustment: " + str(turretPosAdjustment))
-        print("gunCoordinates X: " + str(gunCoordinates[0]))
-        print("StartingShell Y Adjustment: " + str(startingShellYAdjustment))
-        print("StartingShell Y: " + str(startingShell[1]))
+        # print("---------------------------------")
+        # print("StartingShell X Adjustment: " + str(startingShellXAdjustment))
+        # print("StartingShell X: " + str(startingShell[0]))
+        # print("TurretPosAdjustment: " + str(turretPosAdjustment))
+        # print("gunCoordinates X: " + str(gunCoordinates[0]))
+        # print("StartingShell Y Adjustment: " + str(startingShellYAdjustment))
+        # print("StartingShell Y: " + str(startingShell[1]))
 
         actual_ground = display_height - ground_height
 
@@ -407,9 +469,19 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX
             #x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
             hit_x = int((startingShell[0]*actual_ground)/startingShell[1])
             hit_y = int(actual_ground)
-            if enemyTankX + 15 > hit_x  > enemyTankX - 15:
-                print("Player HIT TARGET!")
+            if enemyTankX + 10 > hit_x  > enemyTankX - 10:
+                print("Player CRITICALLY HIT TARGET!")
                 damage = 25
+            elif enemyTankX + 15 > hit_x  > enemyTankX - 15:
+                print("Player Hard HIT TARGET!")
+                damage = 18
+            elif enemyTankX + 25 > hit_x  > enemyTankX - 25:
+                print("Player Medium HIT TARGET!")
+                damage = 10
+            elif enemyTankX + 35 > hit_x  > enemyTankX - 35:
+                print("Player Light HIT TARGET!")
+                damage = 5
+
             #print ("Impact:",hit_x,hit_y)
             explosion(hit_x , hit_y)
             fire = False
@@ -430,10 +502,13 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX
             fire = False
 
         pygame.display.update()
-        clock.tick(10)
+        clock.tick(100)
 
     return damage
 
+#simulate a shot many times until the CPU finds the right target
+#then randomize that power level so it doesn't always hit
+#another path to CPU behavior is to have it take a shot, then measure whether it was short or long and adjust accordingly
 def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,pTankX,pTankY):
     currentPower = 1
     power_found = False
@@ -475,7 +550,7 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
                 hit_x = int((startingShell[0] * actual_ground) / startingShell[1])
                 hit_y = int(actual_ground)
                 if pTankX + 15 > hit_x > pTankX - 15:
-                    print("target acquired!")
+                    #print("target acquired!")
                     power_found = True
                 fire = False
 
@@ -497,6 +572,11 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
     startingShell = list(gunCoordinates)
     #print("FIRE!")
 
+    #this is where the enemy tank difficulty comes in
+    #give a random factor to the shot after it has "found its mark" in the loop above
+    #a dumber tank gets a higher randomness, a better tank gets a lower
+    randomized_power = random.randrange(int(currentPower * 0.90), int(currentPower * 1.10))
+
     while fire:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -511,7 +591,7 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
         #quadratic equation example
         #y = x^2  y = x**2
         #y = -x^2 produces an upside down U which is the shape of an arch.  booyah!
-        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01/(currentPower/50))**2) - (turretPos + turretPos/(12-turretPos)))
+        startingShell[1] += int((((startingShell[0] - gunCoordinates[0])*0.01/(randomized_power/50))**2) - (turretPos + turretPos/(12-turretPos)))
 
         actual_ground = display_height - ground_height
 
@@ -525,9 +605,19 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
             #x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
             hit_x = int((startingShell[0]*actual_ground)/startingShell[1])
             hit_y = int(actual_ground)
-            if pTankX + 15 > hit_x  > pTankX - 15:
-                print("CPU HIT TARGET!")
+            if pTankX + 10 > hit_x  > pTankX - 10:
+                print("CPU CRITICALLY HIT TARGET!")
                 damage = 25
+            elif pTankX + 15 > hit_x  > pTankX - 15:
+                print("CPU Hard HIT TARGET!")
+                damage = 18
+            elif pTankX + 25 > hit_x  > pTankX - 25:
+                print("CPU Medium HIT TARGET!")
+                damage = 10
+            elif pTankX + 35 > hit_x  > pTankX - 35:
+                print("CPU Light HIT TARGET!")
+                damage = 5
+
             explosion(hit_x , hit_y)
             fire = False
 
@@ -573,6 +663,12 @@ def health_bars(player_health, enemy_health):
     pygame.draw.rect(gameDisplay, player_health_color, (680,25,player_health,25))
     pygame.draw.rect(gameDisplay, enemy_health_color, (20, 25, enemy_health, 25))
 
+def checkWinner(pHealth, eHealth):
+    if pHealth < 1:
+        game_over()
+    elif eHealth < 1:
+        winning_menu()
+
 def gameLoop():
     gameExit = False
     gameOver = False
@@ -594,7 +690,7 @@ def gameLoop():
     power_change = 0
 
     barrierLocationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
-    randomHeight = random.randrange(display_height * 0.1, display_height * 0.6)
+    randomHeight = random.randrange(display_height * 0.1, display_height * 0.4)
     barrier_width = 40
 
     #main game loop
@@ -646,9 +742,11 @@ def gameLoop():
                 elif event.key == pygame.K_SPACE:
                     damage = fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY)
                     enemy_health -= damage
+                    checkWinner(player_health,enemy_health)
 
-                    #damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,randomHeight,mainTankX,mainTankY)
+                    damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,randomHeight,mainTankX,mainTankY)
                     player_health -= damage
+                    checkWinner(player_health, enemy_health)
 
                 elif event.key == pygame.K_a:
                     power_change = -1
@@ -678,8 +776,7 @@ def gameLoop():
             mainTankX += 5
 
         # clear the display
-        #todo uncomment me
-        #gameDisplay.fill(white)
+        gameDisplay.fill(white)
         health_bars(player_health,enemy_health)
 
         # draw the tank and store the position of the turret
@@ -696,7 +793,6 @@ def gameLoop():
 
         pygame.display.update()
 
-
         #frames per second (fps)
         #to affect game difficulty always change movement variables first before tinkering with fps
         clock.tick(FPS)
@@ -704,5 +800,7 @@ def gameLoop():
     pygame.quit()
     quit()
 
+#game_over()
+#winning_menu()
 game_intro()
 gameLoop()
