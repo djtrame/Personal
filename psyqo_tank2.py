@@ -740,10 +740,45 @@ def gameLoop():
                 elif event.key == pygame.K_p:
                     pause()
                 elif event.key == pygame.K_SPACE:
+                    #player fires
                     damage = fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY)
                     enemy_health -= damage
                     checkWinner(player_health,enemy_health)
 
+                    #move the enemy tank after we fire
+                    possibleMovement = ['f','r']
+                    moveIndex = random.randrange(0,2)
+
+                    #randomize how far the tank moves
+                    for x in range(random.randrange(0,10)):
+                        if display_width * 0.3 > enemyTankX > display_width * 0.03:
+                            if possibleMovement[moveIndex] == "f":
+                                enemyTankX += 5
+                            elif possibleMovement[moveIndex] == "r":
+                                enemyTankX -= 5
+
+                            # clear the display
+                            gameDisplay.fill(white)
+                            health_bars(player_health, enemy_health)
+
+                            # draw the tank and store the position of the turret
+                            gun = tank(mainTankX, mainTankY, currentTurretPos)
+                            enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
+
+                            fire_power += power_change
+                            power(fire_power)
+
+                            barrier(barrierLocationX, randomHeight, barrier_width)
+
+                            # draw the ground over the barrier
+                            gameDisplay.fill(green,
+                                             rect=[0, display_height - ground_height, display_width, ground_height])
+
+                            pygame.display.update()
+                            clock.tick(FPS)
+
+
+                    #cpu fires
                     damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,randomHeight,mainTankX,mainTankY)
                     player_health -= damage
                     checkWinner(player_health, enemy_health)
