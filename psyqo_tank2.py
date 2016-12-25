@@ -1,6 +1,7 @@
 import pygame
 import random
 
+pygame.mixer.pre_init(44100, 16, 2, 4096) #frequency, size, channels, buffersize
 pygame.init()
 
 #define colors using tuples
@@ -22,9 +23,17 @@ tankHeight = 20
 turretWidth = 5
 wheelWidth = 5
 
+difficulties = ["Easy", "Medium", "Hard"]
+difficulty_selected = 0
+
 ground_height = 35
 
 gameDisplay = pygame.display.set_mode((display_width,display_height))
+
+#pygame doesn't seem to like files over 500kb ??
+fire_sound = pygame.mixer.Sound("boom.wav")
+explosion_sound = pygame.mixer.Sound("explosion.wav")
+
 pygame.display.set_caption('Psyqo Tank')
 
 # imgSnakehead = pygame.image.load('snakehead.png')
@@ -165,6 +174,7 @@ def enemy_tank(x,y,turretPos):
 
     # pygame.draw.circle(gameDisplay, black, (x - 15, y + 20), wheelWidth)
 
+    #offset of first wheel drawing
     startWheelX = 15
 
     #0 thru 6
@@ -178,6 +188,7 @@ def enemy_tank(x,y,turretPos):
 #runs once
 def game_intro():
     global inMainMenu
+    global difficulty_selected
     inMainMenu = True
     # intro = True
 
@@ -194,6 +205,12 @@ def game_intro():
                 if event.key == pygame.K_q:
                     pygame.quit()
                     quit()
+                if event.key == pygame.K_1:
+                    difficulty_selected = 0
+                if event.key == pygame.K_2:
+                    difficulty_selected = 1
+                if event.key == pygame.K_3:
+                    difficulty_selected = 2
 
         gameDisplay.fill(white)
         message_to_screen("Welcome to PsyqoTank",
@@ -208,7 +225,7 @@ def game_intro():
                           black,
                           y_displace=10,
                           size="small")
-        message_to_screen("The more enemies you destroy, the harder they get!",
+        message_to_screen("Press 1 for Easy, 2 for Medium and 3 for Hard Difficulty",
                           black,
                           y_displace=50,
                           size="small")
@@ -216,6 +233,11 @@ def game_intro():
         #                   black,
         #                   y_displace=180,
         #                   size="small")
+
+        message_to_screen("Difficulty Selected = " + difficulties[difficulty_selected],
+                          black,
+                          y_displace=90,
+                          size="small")
 
         createButton("Play", 150,500,110,50,darkgreen, green, action="play")
         createButton("Controls", 350, 500, 110, 50, yellow, lightyellow, action="controls")
@@ -227,6 +249,7 @@ def game_intro():
 
 def game_over():
     global inGameOverMenu
+    global difficulty_selected
     inGameOverMenu = True
 
     while inGameOverMenu:
@@ -235,6 +258,13 @@ def game_over():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    difficulty_selected = 0
+                if event.key == pygame.K_2:
+                    difficulty_selected = 1
+                if event.key == pygame.K_3:
+                    difficulty_selected = 2
 
         gameDisplay.fill(white)
         message_to_screen("Game Over!",
@@ -244,6 +274,15 @@ def game_over():
         message_to_screen("You died!",
                           black,
                           y_displace=-30,
+                          size="small")
+        message_to_screen("Press 1 for Easy, 2 for Medium and 3 for Hard Difficulty",
+                          black,
+                          y_displace=50,
+                          size="small")
+
+        message_to_screen("Difficulty Selected = " + difficulties[difficulty_selected],
+                          black,
+                          y_displace=90,
                           size="small")
 
 
@@ -257,6 +296,7 @@ def game_over():
 
 def winning_menu():
     global inWinningMenu
+    global difficulty_selected
     inWinningMenu = True
 
     while inWinningMenu:
@@ -265,6 +305,13 @@ def winning_menu():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_1:
+                    difficulty_selected = 0
+                if event.key == pygame.K_2:
+                    difficulty_selected = 1
+                if event.key == pygame.K_3:
+                    difficulty_selected = 2
 
         gameDisplay.fill(white)
         message_to_screen("You won!",
@@ -274,6 +321,15 @@ def winning_menu():
         message_to_screen("Congrats!",
                           black,
                           y_displace=-30,
+                          size="small")
+        message_to_screen("Press 1 for Easy, 2 for Medium and 3 for Hard Difficulty",
+                          black,
+                          y_displace=50,
+                          size="small")
+
+        message_to_screen("Difficulty Selected = " + difficulties[difficulty_selected],
+                          black,
+                          y_displace=90,
                           size="small")
 
 
@@ -392,6 +448,7 @@ def barrier(barrierLocationX, randomHeight, barrier_width):
     pygame.draw.rect(gameDisplay, black, [barrierLocationX, display_height-randomHeight, barrier_width, randomHeight])
 
 def explosion(x,y, size=50):
+    pygame.mixer.Sound.play(explosion_sound)
     explode = True
 
     while explode:
@@ -421,6 +478,7 @@ def explosion(x,y, size=50):
 
 
 def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY):
+    pygame.mixer.Sound.play(fire_sound)
     fire = True
     damage = 0
 
@@ -509,7 +567,8 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX
 #simulate a shot many times until the CPU finds the right target
 #then randomize that power level so it doesn't always hit
 #another path to CPU behavior is to have it take a shot, then measure whether it was short or long and adjust accordingly
-def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,pTankX,pTankY):
+def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,barrierHeight,pTankX,pTankY):
+    pygame.mixer.Sound.play(fire_sound)
     currentPower = 1
     power_found = False
     damage = 0
@@ -549,7 +608,9 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
                 # x = 183 <------ estimated last X of impact (when the shell hit the border at 600)
                 hit_x = int((startingShell[0] * actual_ground) / startingShell[1])
                 hit_y = int(actual_ground)
-                if pTankX + 15 > hit_x > pTankX - 15:
+
+                #if the shell hits 10 pixels to the left or right of the tank
+                if pTankX + 10 > hit_x > pTankX - 10:
                     #print("target acquired!")
                     power_found = True
                 fire = False
@@ -559,7 +620,7 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
             check_x_2 = startingShell[0] >= barrierLocationX
 
             check_y_1 = startingShell[1] <= display_height
-            check_y_2 = startingShell[1] >= display_height - randomHeight
+            check_y_2 = startingShell[1] >= display_height - barrierHeight
 
             if check_x_1 and check_x_2 and check_y_1 and check_y_2:
                 hit_x = int(startingShell[0])
@@ -575,7 +636,18 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
     #this is where the enemy tank difficulty comes in
     #give a random factor to the shot after it has "found its mark" in the loop above
     #a dumber tank gets a higher randomness, a better tank gets a lower
-    randomized_power = random.randrange(int(currentPower * 0.90), int(currentPower * 1.10))
+    randomPowerRange = 0.0001
+
+    if difficulties[difficulty_selected] == "Easy":
+        randomPowerRange = 0.2
+    elif difficulties[difficulty_selected] == "Medium":
+        randomPowerRange = 0.1
+    elif difficulties[difficulty_selected] == "Hard":
+        randomPowerRange = 0.05
+
+    randomized_power = random.randrange(int(currentPower * (1-randomPowerRange)), int(currentPower * (1+randomPowerRange)))
+    randomized_power += 1
+
 
     while fire:
         for event in pygame.event.get():
@@ -626,7 +698,7 @@ def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocation
         check_x_2 = startingShell[0] >= barrierLocationX
 
         check_y_1 = startingShell[1] <= display_height
-        check_y_2 = startingShell[1] >= display_height - randomHeight
+        check_y_2 = startingShell[1] >= display_height - barrierHeight
 
 
         if check_x_1 and check_x_2 and check_y_1 and check_y_2:
@@ -676,21 +748,22 @@ def gameLoop():
     player_health = 100
     enemy_health = 100
 
-
     mainTankX = display_width * 0.9
     mainTankY = display_height * 0.9
     tankMove = 0
     currentTurretPos = 0
     changeTurretPos = 0
 
-    enemyTankX = display_width * 0.1
+    #create randomized starting locations
+    #enemyTankX = display_width * 0.1
+    enemyTankX = display_width * (random.randint(1,35)/100)
     enemyTankY = display_height * 0.9
 
     fire_power = 50
     power_change = 0
 
-    barrierLocationX = (display_width /2) + random.randint(-0.2*display_width,.2*display_width)
-    randomHeight = random.randrange(display_height * 0.1, display_height * 0.4)
+    barrierLocationX = (display_width /2) + random.randint(-0.1*display_width,.1*display_width)
+    barrierHeight = random.randrange(display_height * 0.1, display_height * 0.4)
     barrier_width = 40
 
     #main game loop
@@ -741,45 +814,55 @@ def gameLoop():
                     pause()
                 elif event.key == pygame.K_SPACE:
                     #player fires
-                    damage = fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY)
+                    damage = fireShell(gun,mainTankX,mainTankY,currentTurretPos,fire_power,barrierLocationX,barrier_width,barrierHeight,enemyTankX,enemyTankY)
                     enemy_health -= damage
                     checkWinner(player_health,enemy_health)
 
                     #move the enemy tank after we fire
                     possibleMovement = ['f','r']
                     moveIndex = random.randrange(0,2)
+                    eTankRightBoundary = display_width * 0.4
+                    eTankLeftBoundary = 16
 
                     #randomize how far the tank moves
                     for x in range(random.randrange(0,10)):
-                        if display_width * 0.3 > enemyTankX > display_width * 0.03:
-                            if possibleMovement[moveIndex] == "f":
-                                enemyTankX += 5
-                            elif possibleMovement[moveIndex] == "r":
-                                enemyTankX -= 5
+                        #if the left edge of the tank is to the left of 320 pixels and if the tank is to the right of 32 pixels then move it
+                        #if eTankRightBoundary > enemyTankX > eTankLeftBoundary:
+                        if possibleMovement[moveIndex] == "f":
+                            #if the tank has gone too far forward
+                            if enemyTankX >= eTankRightBoundary:
+                                enemyTankX -= 10
+                                moveIndex = 1
+                            else:
+                                enemyTankX += 10
+                        elif possibleMovement[moveIndex] == "r":
+                            #if the tank has gone too far backward
+                            if enemyTankX <= eTankLeftBoundary:
+                                enemyTankX += 10
+                                moveIndex = 0
+                            else:
+                                enemyTankX -= 10
 
-                            # clear the display
-                            gameDisplay.fill(white)
-                            health_bars(player_health, enemy_health)
+                        # clear the display
+                        gameDisplay.fill(white)
+                        health_bars(player_health, enemy_health)
 
-                            # draw the tank and store the position of the turret
-                            gun = tank(mainTankX, mainTankY, currentTurretPos)
-                            enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
+                        # draw the tank and store the position of the turret
+                        gun = tank(mainTankX, mainTankY, currentTurretPos)
+                        enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
 
-                            fire_power += power_change
-                            power(fire_power)
+                        barrier(barrierLocationX, barrierHeight, barrier_width)
 
-                            barrier(barrierLocationX, randomHeight, barrier_width)
+                        # draw the ground over the barrier
+                        gameDisplay.fill(green,
+                                         rect=[0, display_height - ground_height, display_width, ground_height])
 
-                            # draw the ground over the barrier
-                            gameDisplay.fill(green,
-                                             rect=[0, display_height - ground_height, display_width, ground_height])
-
-                            pygame.display.update()
-                            clock.tick(FPS)
+                        pygame.display.update()
+                        clock.tick(FPS)
 
 
                     #cpu fires
-                    damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,randomHeight,mainTankX,mainTankY)
+                    damage = eFireShell(enemy_gun, enemyTankX, enemyTankY, 8, 50, barrierLocationX, barrier_width,barrierHeight,mainTankX,mainTankY)
                     player_health -= damage
                     checkWinner(player_health, enemy_health)
 
@@ -819,9 +902,15 @@ def gameLoop():
         enemy_gun = enemy_tank(enemyTankX,enemyTankY,8)
 
         fire_power += power_change
+
+        if fire_power > 100:
+            fire_power = 100
+        elif fire_power < 1:
+            fire_power = 1
+
         power(fire_power)
 
-        barrier(barrierLocationX, randomHeight, barrier_width)
+        barrier(barrierLocationX, barrierHeight, barrier_width)
 
         #draw the ground over the barrier
         gameDisplay.fill(green, rect=[0,display_height-ground_height, display_width,ground_height])
