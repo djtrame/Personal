@@ -33,12 +33,35 @@ edges = (
     (5,7)
 )
 
+#6 faces in a cube.  connect the vertices.
+surfaces = (
+    (0,1,2,3),
+    (3,2,7,6),
+    (6,7,5,4),
+    (4,5,1,0),
+    (1,5,7,2),
+    (4,0,3,6)
+
+)
+
 def Draw_Cube():
+
+    #draw quads first so the lines appear on top
+    glBegin(GL_QUADS)
+    for surface in surfaces:
+        for vertex in surface:
+            glColor3fv((1,0,1))
+            glVertex3fv(vertices[vertex])
+
+    glEnd()
+
     #delimit vertices that define your primitives
     glBegin(GL_LINES)
 
     for edge in edges:
         for vertex in edge:
+            #color the lines of the cube RGB
+            glColor3fv((0,1,1))
             glVertex3fv(vertices[vertex])
 
     glEnd()
@@ -62,7 +85,7 @@ def main():
     #angle, x, y, z
     #move 90 degrees and we're on top of the cube
     #glRotatef(90, 5, 0, 0)
-    glRotatef(40,20,20,0)
+    glRotatef(20,2,0,0)
 
     while True:
         for event in pygame.event.get():
@@ -70,8 +93,17 @@ def main():
                 pygame.quit()
                 quit()
 
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                #4 is mouse wheel forward, 5 is reverse
+                print(event.button)
+
+                if event.button == 4:
+                    glTranslatef(0.0,0.0,1.0)
+                elif event.button == 5:
+                    glTranslatef(0.0,0.0,-1.0)
+
         #automatically rotate the cube
-        #glRotatef(1,1,1,1)
+        glRotatef(1,3,1,1)
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
 
