@@ -34,7 +34,7 @@ clock = pygame.time.Clock()
 #thickness of the snake
 block_size = 20
 appleThickness = 30
-FPS = 15
+FPS = 10
 
 direction = "right"
 

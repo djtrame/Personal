@@ -1,6 +1,8 @@
 import pygame
 import random
 
+#todo fix maximum depth bug when clicking the controls button in the main menu
+
 pygame.mixer.pre_init(44100, 16, 2, 4096) #frequency, size, channels, buffersize
 pygame.init()
 
@@ -31,8 +33,8 @@ ground_height = 35
 gameDisplay = pygame.display.set_mode((display_width,display_height))
 
 #pygame doesn't seem to like files over 500kb ??
-fire_sound = pygame.mixer.Sound("boom.wav")
-explosion_sound = pygame.mixer.Sound("explosion.wav")
+#fire_sound = pygame.mixer.Sound("boom.wav")
+#explosion_sound = pygame.mixer.Sound("explosion.wav")
 
 pygame.display.set_caption('Psyqo Tank')
 
@@ -94,6 +96,7 @@ def pause():
 if False:
     import pygame._view
 
+#i think this was only used on snake... comment for tank game?
 def score(score):
     #score being passed in is snakeLength-1
     if score < 11:
@@ -448,7 +451,7 @@ def barrier(barrierLocationX, randomHeight, barrier_width):
     pygame.draw.rect(gameDisplay, black, [barrierLocationX, display_height-randomHeight, barrier_width, randomHeight])
 
 def explosion(x,y, size=50):
-    pygame.mixer.Sound.play(explosion_sound)
+    #pygame.mixer.Sound.play(explosion_sound)
     explode = True
 
     while explode:
@@ -478,7 +481,7 @@ def explosion(x,y, size=50):
 
 
 def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,randomHeight,enemyTankX,enemyTankY):
-    pygame.mixer.Sound.play(fire_sound)
+    #pygame.mixer.Sound.play(fire_sound)
     fire = True
     damage = 0
 
@@ -568,7 +571,7 @@ def fireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX
 #then randomize that power level so it doesn't always hit
 #another path to CPU behavior is to have it take a shot, then measure whether it was short or long and adjust accordingly
 def eFireShell(gunCoordinates, tankX, tankY, turretPos,gun_power,barrierLocationX,barrier_width,barrierHeight,pTankX,pTankY):
-    pygame.mixer.Sound.play(fire_sound)
+    #pygame.mixer.Sound.play(fire_sound)
     currentPower = 1
     power_found = False
     damage = 0
@@ -762,8 +765,9 @@ def gameLoop():
     fire_power = 50
     power_change = 0
 
-    barrierLocationX = (display_width /2) + random.randint(-0.1*display_width,.1*display_width)
-    barrierHeight = random.randrange(display_height * 0.1, display_height * 0.4)
+    #barrierLocationX = (display_width /2) + random.randint(-0.1*display_width,.1*display_width)
+    barrierLocationX = float(display_width /2) + random.uniform(-0.1*display_width, 0.1*display_width)
+    barrierHeight = random.randrange(int(display_height * 0.1), int(display_height * 0.4))
     barrier_width = 40
 
     #main game loop
